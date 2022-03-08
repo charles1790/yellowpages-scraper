@@ -7,17 +7,15 @@ import unicodecsv as csv
 import argparse
 
 
-def parse_listing(keyword, place):
+def parse_listing(keyword, place, page): # page gives the page of results. Start it at 1.
     """
-
     Function to process yellowpage listing page
     : param keyword: search query
     : param place : place name
-
     """
-    url = "https://www.yellowpages.com/search?search_terms={0}&geo_location_terms={1}".format(keyword, place)
+    url = "https://www.yellowpages.com/search?search_terms={0}&geo_location_terms={1}&page={2}".format(keyword, place, page)
 
-    print("retrieving ", url)
+#    print("retrieving ", url)
 
     headers = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
                'Accept-Encoding': 'gzip, deflate, br',
@@ -63,7 +61,7 @@ def parse_listing(keyword, place):
                     raw_categories = results.xpath(XPATH_CATEGORIES)
                     raw_website = results.xpath(XPATH_WEBSITE)
                     raw_rating = results.xpath(XPATH_RATING)
-                    # address = results.xpath(XPATH_ADDRESS)
+#                    address = results.xpath(XPATH_ADDRESS)
                     raw_street = results.xpath(XPATH_STREET)
                     raw_locality = results.xpath(XPATH_LOCALITY)
                     raw_region = results.xpath(XPATH_REGION)
@@ -82,20 +80,22 @@ def parse_listing(keyword, place):
                     locality, locality_parts = locality.split(',')
                     _, region, zipcode = locality_parts.split(' ')
 
+
                     business_details = {
                         'business_name': business_name,
                         'telephone': telephone,
-                        'business_page': business_page,
-                        'rank': rank,
-                        'category': category,
-                        'website': website,
-                        'rating': rating,
+                        #'business_page': business_page,
+                        #'rank': rank,
+                        #'category': category,
+                        #'website': website,
+                        #'rating': rating,
                         'street': street,
                         'locality': locality,
                         'region': region,
                         'zipcode': zipcode,
-                        'listing_url': response.url
+                        #'listing_url': response.url
                     }
+
                     scraped_results.append(business_details)
 
                 return scraped_results
@@ -122,14 +122,35 @@ if __name__ == "__main__":
     args = argparser.parse_args()
     keyword = args.keyword
     place = args.place
-
-    scraped_data = parse_listing(keyword, place)
+    scraped_data = []
+    for x in range(1, 5):
+        stuff = parse_listing(keyword, place, x)
+        if (not stuff):
+            print("Scanning complete.")
+            print("Now let thy servant depart in peace")
+            print("For mine eyes have seen the data structure")
+            print("I was created to create")
+            quit()
+        scraped_data += stuff # this line calls the big procedure
+        print("Scanning page ", x);
 
     if scraped_data:
         print("Writing scraped data to %s-%s-yellowpages-scraped-data.csv" % (keyword, place))
         with open('%s-%s-yellowpages-scraped-data.csv' % (keyword, place), 'wb') as csvfile:
-            fieldnames = ['rank', 'business_name', 'telephone', 'business_page', 'category', 'website', 'rating',
-                          'street', 'locality', 'region', 'zipcode', 'listing_url']
+            fieldnames = [
+                    #'rank',
+                    'business_name',
+                    'telephone',
+                    #'business_page',
+                    #'category',
+                    #'website',
+                    #'rating',
+                    'street',
+                    'locality',
+                    'region',
+                    'zipcode',
+                    #'listing_url'
+                    ]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
             writer.writeheader()
             for data in scraped_data:
